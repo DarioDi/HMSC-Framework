@@ -3,6 +3,7 @@
 library(Hmsc)
 library(ape)
 library(MASS)
+library(beepr)
 
 #### Simulating Species Niches ####
 
@@ -11,7 +12,7 @@ library(MASS)
 #correlation matrix C
 
 ns = 100
-phy = rcoal(n = ns, tip.labal =
+phy = rcoal(n = ns, tip.label =
               sprintf('sp_%.3d',1:ns), br = "coalescent")
 C = vcv(phy, model = "Brownian", corr = TRUE)
 
@@ -86,7 +87,10 @@ Y = switch(community, "A" = Y.A, "B" = Y.B)
 colnames(Y) = phy$tip.label
 Tr = switch(community, "A" = Tr.A, "B" = Tr.B)
 TrData = data.frame(trait = Tr[,2])
+rownames(TrData) = phy$tip.label
 XData = data.frame(x = X[,2])
+
+# had to put row names in TrData to match Y
 
 # define the HMSC model. model species occurrences as a linear function to the 
 # environmental variable x and species niches as a linear function of the
@@ -97,45 +101,94 @@ m = Hmsc(Y=Y, XData = XData, XFormula = ~x, TrData = TrData,
 
 # perform the model fitting
 
-thin =
-samples =
-transient =
-nChains =
-verbose = 
+nChains = 2 #how many chains to sample
+thin = 5 #how much thinning to apply
+samples = 1000 #how many samples to obtain per chain
+transient = 500*thin #length of transient to include
+verbose = 500*thin #how frequently we see the progress of the MCMC sampling
 
 m = sampleMcmc(m, thin = thin, samples = samples,
                transient = transient, nChains = nChains, verbose = verbose)
+beep(sound = 1, expr = NULL)
 
 # check MCMC convergence
 
 mpost = convertToCodaObject(m)
+# plot(mpost$Rho)
 
 effectiveSize(mpost$Rho)
+
+
 gelman.diag(mpost$Rho, multivariate = FALSE,
             autoburnin = FALSE)$psrf
 
 
 
-
 #### Explanatory and Predictive Powers of the HMSC Model ####
 
+preds = computePredictedValues(m)
+MF = evaluateModelFit(hM = m, predY = preds)
+
+partition = createPartition(m, nfolds = 2)
+preds = computePredictedValues(m, partition = partition)
+MFCV = evaluateModelFit(hM = m, predY = preds)
+beep(sound = 1, expr = NULL)
+
+par(mfrow = c(1,2))
+plot(MF$TjurR2 ~ MF$AUC)
+plot(MFCV$TjurR2 ~ MFCV$AUC)
+
+dev.off()
 
 #### Examining Parameter Estimates ####
 
+# we use plotBeta to visualise the estimated species niches
 
-#### Does Including Traits and Phylogenies Help Make Better Predictions ####
+postBeta = getPostEstimate(m, parName = "Beta")
+plotBeta(m, post = postBeta, param = "Sign", plotTree = TRUE,
+         supportLevel = 0.95, split = 0.4, spNamesNumbers = c(F, F))
 
+# when the species are estimated to be positive, it means they are responding
+# to covariate x
+
+# we use plotGamma to visualise how species niches are estimed to depend on
+# species traits
+
+postGamma = getPostEstimate(m, parName = "Gamma")
+plotGamma(m, post = postGamma, param = "Sign", supportLevel = 0.95)
+
+# as the covariate is positive, this indicates that species with a high trait 
+# value respond positively to the environmental covariate.
+# if the parameter estimate is negative, this indicates that species with a 
+# high trait value have a low baseline occurrence probability 
+
+# we next look at the parameter estimate for phylogenetic signal parameter p
+
+summary(mpost$Rho)$quantiles
+
+# the posterior distribution reveals strong evidence for a phylogenetic signal
+# as the 95% credible interval of p is positive and very close to 1
 
 #### Repeating the Analyses for the Community B Where Species Niches Are Structured by Their Traits ####
 
+# repeat the analyses now for community B
 
+community = "B"
 
+m = sampleMcmc(m, thin = thin, samples = samples,
+               transient = transient, nChains = nChains, verbose = verbose)
+beep(sound = 1, expr = NULL)
 
+mpost = convertToCodaObject(m)
 
+postBeta = getPostEstimate(m, parName = "Beta")
+plotBeta(m, post = postBeta, param = "Sign", plotTree = TRUE,
+         supportLevel = 0.95, split = 0.4, spNamesNumbers = c(F, F))
 
+postGamma = getPostEstimate(m, parName = "Gamma")
+plotGamma(m, post = postGamma, param = "Sign", supportLevel = 0.95)
 
-
-
+summary(mpost$Rho)$quantiles
 
 
 
