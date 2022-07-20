@@ -1,11 +1,11 @@
-#HMSC Joint Species Distribution Model - Simulated Case Study
+#Joint Species Distribution Modelling - Variation in Species ----
 
 library(Hmsc)
 library(ape)
 library(MASS)
 library(beepr)
 
-#### Simulating Species Niches ####
+# Simulating Species Niches ####
 
 #generate a niche variation. construct a random phylogeny for 100 species
 #vcv function in the ape package turns the phylogenetic tree into a phylogenetic
@@ -42,7 +42,7 @@ beta.A = matrix(mvrnorm(n=1,mu=as.vector(mu.A),
 beta.B = matrix(mvrnorm(n=1,mu=as.vector(mu.B),
                         Sigma = kronecker(diag(ns), V2)), ncol = ns)
 
-#### Simulating Species Data ####
+# Simulating Species Data ####
 
 # we consider a single environmental covariate x and use the standard normal
 # distribution to simulation variation in x over n = 50 sampling units
@@ -61,7 +61,7 @@ L.B = X %*% beta.B
 Y.A = 1*((L.A+matrix(rnorm(n*ns), ncol = ns)) > 0)
 Y.B = 1*((L.B+matrix(rnorm(n*ns), ncol = ns)) > 0)
 
-#### Exploring Raw Data ####
+# Exploring Raw Data ####
 
 # before fitting to HMSC we explore the raw data. since we are using species
 # occurrences we may wish to look at species richness (row sums) and species 
@@ -78,7 +78,7 @@ hist(P.A)
 hist(S.B)
 hist(P.B)
 
-#### Fitting ab HNSC Model for the Community A with Phylogenetically Structured Species Niches ####
+# Fitting ab HNSC Model for the Community A with Phylogenetically Structured Species Niches ####
 
 #start by formatting the data so they are suitable for input into HMSC
 
@@ -124,7 +124,7 @@ gelman.diag(mpost$Rho, multivariate = FALSE,
 
 
 
-#### Explanatory and Predictive Powers of the HMSC Model ####
+# Explanatory and Predictive Powers of the HMSC Model ####
 
 preds = computePredictedValues(m)
 MF = evaluateModelFit(hM = m, predY = preds)
@@ -140,7 +140,7 @@ plot(MFCV$TjurR2 ~ MFCV$AUC)
 
 dev.off()
 
-#### Examining Parameter Estimates ####
+# Examining Parameter Estimates ####
 
 # we use plotBeta to visualise the estimated species niches
 
@@ -169,7 +169,7 @@ summary(mpost$Rho)$quantiles
 # the posterior distribution reveals strong evidence for a phylogenetic signal
 # as the 95% credible interval of p is positive and very close to 1
 
-#### Repeating the Analyses for the Community B Where Species Niches Are Structured by Their Traits ####
+# Repeating the Analyses for the Community B Where Species Niches Are Structured by Their Traits ####
 
 # repeat the analyses now for community B
 
@@ -190,8 +190,15 @@ plotGamma(m, post = postGamma, param = "Sign", supportLevel = 0.95)
 
 summary(mpost$Rho)$quantiles
 
+#Joint Species Distribution Model - Biotic Interactions ====
 
+# Generate Simulated data ####
 
+# Defining and Fitting Three Alternative HMSC Models ####
+
+# Parameter Estimates in the HMSC Model ####
+
+# Explanatory Power, Predictive Power and Conditional Predict Power ####
 
 
 
